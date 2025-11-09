@@ -3,10 +3,17 @@ import express from "express";
 import cors from "cors";
 import { handleUserSignUp } from "./controllers/user.controller.js";
 import { handleAddStore } from "./controllers/store.controller.js";
-import { handleAddReview } from "./controllers/review.controller.js";
+import {
+  handleAddReview,
+  handleGetReviews,
+  handleGetMyReviews,
+} from "./controllers/review.controller.js";
 import {
   handleAcceptMission,
   handleAddMission,
+  handleGetMissions,
+  handleMyMissions,
+  handleCompleteMission,
 } from "./controllers/mission.controller.js";
 dotenv.config();
 
@@ -42,6 +49,11 @@ app.post("/api/v1/biz/stores", handleAddStore); // 특정 지역에 가게 추�
 app.post("/api/v1/stores/:storeId/reviews", handleAddReview); // 가게에 리뷰 추가하기 API
 app.post("/api/v1/biz/stores/:storeId/missions", handleAddMission); // 가게에 미션 추가하기 API
 app.post("/api/v1/missions/:missionId", handleAcceptMission); // 가게의 미션을 도전 중인 미션에 추가 (미션 도전하기) API
+app.get("/api/v1/stores/:storeId/reviews", handleGetReviews);
+app.get("/api/v1/reviews/me", handleGetMyReviews);
+app.get("/api/v1/stores/:storeId/missions", handleGetMissions);
+app.get("/api/v1/missions/me", handleMyMissions);
+app.patch("/api/v1/biz/missions", handleCompleteMission);
 
 app.use((err, req, res, next) => {
   if (res.headersSent) {

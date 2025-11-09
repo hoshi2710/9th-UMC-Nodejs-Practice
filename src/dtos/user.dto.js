@@ -16,8 +16,8 @@ export const bodyToUser = (body) => {
 
 export const responseFromUser = (data) => {
   return {
-    id: data.user[0].id,
-    createdAt: data.user[0].created_at,
+    id: data.user.id,
+    createdAt: data.user.created_at,
     preferences: data.preferencesMapped,
   };
 };

@@ -9,7 +9,7 @@ export const addMissionRequestDto = (body, params) => {
 export const addMissionResponseDto = (data) => {
   return {
     id: data.id,
-    createdAt: data.created_at,
+    createdAt: data.createdAt,
   };
 };
 
@@ -22,6 +22,35 @@ export const acceptMissionRequestDto = (body, params) => {
 export const acceptMissionResponseDto = (data) => {
   return {
     id: data.id,
-    acceptedAt: data.accepted_at,
+    acceptedAt: data.acceptedAt,
+  };
+};
+export const getMissionsRequestDto = (params, query) => {
+  return {
+    storeId: parseInt(params.storeId),
+    cursor: parseInt(query.cursor) || 0,
+  };
+};
+export const getMissionsResponseDto = (data) => {
+  return data;
+};
+export const getMyMissionsRequestDto = (body, query) => {
+  return {
+    userId: parseInt(body.userId),
+    cursor: parseInt(query.cursor) || 0,
+  };
+};
+export const getMyMissionsResponseDto = (data) => {
+  return data;
+};
+export const completeMissionRequestDto = (body) => {
+  return {
+    code: body.code,
+  };
+};
+export const completeMissionResponseDto = (data) => {
+  return {
+    id: data.id,
+    completedAt: data.completedAt,
   };
 };
