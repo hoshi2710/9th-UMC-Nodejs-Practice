@@ -1,36 +1,68 @@
-import { pool } from "../db.config.js";
+import { prisma } from "../db.config.js";
 
 export const createReview = async (data) => {
-  const conn = await pool.getConnection();
-
-  try {
-    const [review] = await pool.query(
-      `INSERT INTO review (restaurant_id,score,content) VALUES (?,?,?)`,
-      [data.storeId, data.score, data.content]
-    );
-    return review.insertId;
-  } catch (err) {
-    throw new Error(
-      `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`
-    );
-  } finally {
-    conn.release();
-  }
+  const review = await prisma.review.create({
+    data: {
+      restaurant: {
+        connect: {
+          id: data.storeId,
+        },
+      },
+      user: {
+        connect: {
+          id: data.userId,
+        },
+      },
+      score: data.score,
+      content: data.content,
+    },
+  });
+  return review.id;
 };
 export const findReviewById = async (id) => {
-  const conn = await pool.getConnection();
-
-  try {
-    const [review] = await pool.query(`select * from review where id = ?`, [
-      id,
-    ]);
-    if (review.length == 0) return null;
-    return review[0];
-  } catch (err) {
-    throw new Error(
-      `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`
-    );
-  } finally {
-    conn.release();
-  }
+  const review = await prisma.review.findFirst({
+    where: {
+      id: id,
+    },
+  });
+  return review;
+};
+export const findReviewsByRestaurantId = async (data) => {
+  const reviews = await prisma.review.findMany({
+    where: {
+      restaurantId: data.storeId,
+      deletedAt: null,
+      id: { gt: data.cursor },
+    },
+    orderBy: {
+      id: "asc",
+    },
+    take: 5,
+  });
+  return reviews;
+};
+export const findReviewsByUserId = async (data) => {
+  const reviews = await prisma.review.findMany({
+    select: {
+      id: true,
+      restaurant: {
+        select: {
+          name: true,
+        },
+      },
+      score: true,
+      content: true,
+      createdAt: true,
+    },
+    where: {
+      userId: data.userId,
+      deletedAt: null,
+      id: { gt: data.cursor },
+    },
+    orderBy: {
+      id: "asc",
+    },
+    take: 5,
+  });
+  return reviews;
 };

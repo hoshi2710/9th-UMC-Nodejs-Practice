@@ -1,87 +1,120 @@
-import { pool } from "../db.config.js";
+import { prisma } from "../db.config.js";
+import crypto from "crypto";
 
 export const createMission = async (data) => {
-  const conn = await pool.getConnection();
-  try {
-    const [mission] = await pool.query(
-      `INSERT INTO mission (restaurant_id,end_at,goal,reward) VALUES (?,?,?,?)`,
-      [data.storeId, data.endAt, data.goal, data.reward]
-    );
-    return mission.insertId;
-  } catch (err) {
-    throw new Error(
-      `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`
-    );
-  } finally {
-    conn.release();
-  }
+  const mission = await prisma.mission.create({
+    data: {
+      restaurantId: data.storeId,
+      endAt: new Date(new Date(data.endAt).getTime() + 9 * 60 * 60 * 1000),
+      goal: data.goal,
+      reward: data.reward,
+    },
+  });
+  return mission.id;
 };
 export const findMissionById = async (id) => {
-  const conn = await pool.getConnection();
-  try {
-    const [mission] = await pool.query(`select * from mission where id=?`, [
-      id,
-    ]);
-    if (mission.length == 0) return null;
-    return mission[0];
-  } catch (err) {
-    throw new Error(
-      `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`
-    );
-  } finally {
-    conn.release();
-  }
+  const mission = await prisma.mission.findFirst({
+    where: {
+      id: id,
+    },
+  });
+  return mission;
 };
 
 export const findAcceptedMissionByMissionId = async (missionId, userId) => {
-  const conn = await pool.getConnection();
-  try {
-    const [acceptedMission] = await pool.query(
-      `select * from accepted_mission where mission_id = ? and user_id = ?`,
-      [missionId, userId]
-    );
-    if (acceptedMission.length == 0) return null;
-    return acceptedMission[0];
-  } catch (err) {
-    throw new Error(
-      `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`
-    );
-  } finally {
-    conn.release();
-  }
+  const acceptedMission = await prisma.acceptedMission.findFirst({
+    where: {
+      missionId: missionId,
+      userId: userId,
+    },
+  });
+  return acceptedMission;
 };
 
 export const findAcceptedMissionById = async (id) => {
-  const conn = await pool.getConnection();
-  try {
-    const [accepted_mission] = await pool.query(
-      `select * from accepted_mission where id = ?`,
-      [id]
-    );
-    if (accepted_mission.length == 0) return null;
-    return accepted_mission[0];
-  } catch (err) {
-    throw new Error(
-      `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`
-    );
-  } finally {
-    conn.release();
-  }
+  const acceptedMission = await prisma.acceptedMission.findFirst({
+    where: {
+      id: id,
+    },
+  });
+  return acceptedMission;
 };
 
 export const createAcceptMission = async (data) => {
-  const conn = await pool.getConnection();
-  try {
-    const [acceptedMission] = await pool.query(
-      `insert into accepted_mission (mission_id, user_id) values (?,?)`,
-      [data.missionId, data.userId]
-    );
-    return acceptedMission.insertId;
-  } catch (err) {
-    throw new Error(
-      `오류가 발생했어요. 요청 파라미터를 확인해주세요. (${err})`
-    );
-  } finally {
-    conn.release();
-  }
+  const acceptedMission = await prisma.acceptedMission.create({
+    data: {
+      userId: data.userId,
+      missionId: data.missionId,
+      verificationCode: crypto
+        .randomInt(0, 1000000000)
+        .toString()
+        .padStart(9, "0"),
+    },
+  });
+  return acceptedMission.id;
+};
+export const findMissionsByRestaurantId = async (data) => {
+  const missions = await prisma.mission.findMany({
+    where: {
+      restaurantId: data.storeId,
+      endAt: { gt: new Date() },
+      id: { gt: data.cursor },
+    },
+    orderBy: {
+      id: "asc",
+    },
+    take: 5,
+  });
+  return missions;
+};
+export const findMissionsByUserId = async (data) => {
+  const missions = await prisma.acceptedMission.findMany({
+    select: {
+      mission: {
+        select: {
+          reward: true,
+          goal: true,
+          endAt: true,
+          restaurant: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+      acceptedAt: true,
+      id: true,
+    },
+    where: {
+      completedAt: null,
+      id: { gt: data.cursor },
+      userId: data.userId,
+    },
+    orderBy: {
+      id: "asc",
+    },
+    take: 5,
+  });
+  return missions;
+};
+export const completeMissionByCode = async (data) => {
+  const isExists = await prisma.acceptedMission.findFirst({
+    select: {
+      id: true,
+    },
+    where: {
+      verificationCode: data.code,
+    },
+  });
+  if (isExists == null) return null;
+
+  const mission = prisma.acceptedMission.update({
+    data: {
+      completedAt: new Date(new Date().getTime() + 9 * 60 * 60 * 1000),
+    },
+    where: {
+      id: isExists.id,
+    },
+  });
+  return mission;
 };

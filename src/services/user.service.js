@@ -29,7 +29,7 @@ export const userSignUp = async (data) => {
 
   const user = await getUser(joinUserId);
   const preferences = await getUserPreferencesByUserId(joinUserId);
-  const preferencesMapped = preferences.map((type) => type.type_name);
+  const preferencesMapped = preferences.map((type) => type.foodType.typeName);
 
   return responseFromUser({ user, preferencesMapped });
 };
