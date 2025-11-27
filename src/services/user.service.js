@@ -1,10 +1,11 @@
-import { responseFromUser } from "../dtos/user.dto.js";
+import { responseFromUser, modifyMyInfoResponseDto } from "../dtos/user.dto.js";
 import bcrypt from "bcrypt";
 import {
   addUser,
   getUser,
   getUserPreferencesByUserId,
   setPreference,
+  modifyUser,
 } from "../repositories/user.repository.js";
 import { DuplicateUserEmailError } from "../Error.js";
 
@@ -33,4 +34,18 @@ export const userSignUp = async (data) => {
   const preferencesMapped = preferences.map((type) => type.foodType.typeName);
 
   return responseFromUser({ user, preferencesMapped });
+};
+export const modifyMyInfo = async (data) => {
+  if (data.data.password)
+    data.data.password = await bcrypt.hash(
+      data.data.password,
+      await bcrypt.genSalt(10)
+    );
+  for (const key in data.data) {
+    if (data.data[key] === null) {
+      delete data.data[key];
+    }
+  }
+  const user = await modifyUser(data);
+  return modifyMyInfoResponseDto(data);
 };

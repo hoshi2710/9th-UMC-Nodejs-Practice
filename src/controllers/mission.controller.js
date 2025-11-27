@@ -131,7 +131,7 @@ export const handleAcceptMission = async (req, res, next) => {
     }
   */
   const acceptedMission = await acceptMission(
-    acceptMissionRequestDto(req.body, req.params)
+    acceptMissionRequestDto(req.user, req.params)
   );
   res.status(StatusCodes.ACCEPTED).success(acceptedMission);
 };
@@ -228,7 +228,7 @@ export const handleMyMissions = async (req, res, next) => {
     }
   */
   const missions = await getMyMissions(
-    getMyMissionsRequestDto(req.body, req.query)
+    getMyMissionsRequestDto(req.user, req.query)
   );
   res.status(StatusCodes.OK).success(missions);
 };

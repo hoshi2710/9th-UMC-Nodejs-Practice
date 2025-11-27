@@ -25,6 +25,7 @@ enum Platform {
   NAVER
   APPLE
   GOOGLE
+  LOCAL
 }
 model Address {
   id        Int   @id @default(autoincrement())

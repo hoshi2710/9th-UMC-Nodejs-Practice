@@ -13,9 +13,9 @@ export const addMissionResponseDto = (data) => {
   };
 };
 
-export const acceptMissionRequestDto = (body, params) => {
+export const acceptMissionRequestDto = (user, params) => {
   return {
-    userId: body.userId,
+    userId: user.id,
     missionId: parseInt(params.missionId),
   };
 };
@@ -34,9 +34,9 @@ export const getMissionsRequestDto = (params, query) => {
 export const getMissionsResponseDto = (data) => {
   return data;
 };
-export const getMyMissionsRequestDto = (body, query) => {
+export const getMyMissionsRequestDto = (user, query) => {
   return {
-    userId: parseInt(body.userId),
+    userId: parseInt(user.id),
     cursor: parseInt(query.cursor) || 0,
   };
 };

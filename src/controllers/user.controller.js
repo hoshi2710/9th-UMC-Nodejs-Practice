@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
-import { bodyToUser } from "../dtos/user.dto.js";
-import { userSignUp } from "../services/user.service.js";
+import { bodyToUser, modifyMyInfoRequestDto } from "../dtos/user.dto.js";
+import { modifyMyInfo, userSignUp } from "../services/user.service.js";
 
 export const handleUserSignUp = async (req, res, next) => {
   /*
@@ -85,5 +85,9 @@ export const handleUserSignUp = async (req, res, next) => {
   console.log("body:", req.body); // 값이 잘 들어오나 확인하기 위한 테스트용
 
   const user = await userSignUp(bodyToUser(req.body));
-  res.status(StatusCodes.OK).success({ result: user });
+  res.status(StatusCodes.OK).success(user);
+};
+export const handleModifyMyInfo = async (req, res, next) => {
+  const user = await modifyMyInfo(modifyMyInfoRequestDto(req.user, req.body));
+  res.status(StatusCodes.ACCEPTED).success(user);
 };

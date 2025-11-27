@@ -4,7 +4,10 @@ import morgan from "morgan";
 import cors from "cors";
 import swaggerAutogen from "swagger-autogen";
 import swaggerUiExpress from "swagger-ui-express";
-import { handleUserSignUp } from "./controllers/user.controller.js";
+import {
+  handleUserSignUp,
+  handleModifyMyInfo,
+} from "./controllers/user.controller.js";
 import { handleAddStore } from "./controllers/store.controller.js";
 import {
   handleAddReview,
@@ -20,8 +23,20 @@ import {
 } from "./controllers/mission.controller.js";
 import cookieParser from "cookie-parser";
 import compression from "compression";
+import passport from "passport";
+import {
+  googleStrategy,
+  jwtStrategy,
+  localStrategy,
+  naverStrategy,
+} from "./auth.config.js";
+
 dotenv.config();
 
+passport.use(googleStrategy);
+passport.use(naverStrategy);
+passport.use(localStrategy);
+passport.use(jwtStrategy);
 const app = express();
 const port = process.env.PORT;
 
@@ -96,7 +111,8 @@ app.use(
 app.use(express.static("public")); // 정적 파일 접근
 app.use(express.json()); // request의 본문을 json으로 해석할 수 있도록 함 (JSON 형태의 요청 body를 파싱하기 위함)
 app.use(express.urlencoded({ extended: false })); // 단순 객체 문자열 형태로 본문 데이터 해석
-
+app.use(passport.initialize());
+const isLogin = passport.authenticate("jwt", { session: false });
 const myLogger = (req, res, next) => {
   console.log("LOGGED");
   next();
@@ -108,15 +124,16 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 app.post("/api/v1/users/signup", handleUserSignUp);
-app.post("/api/v1/biz/stores", handleAddStore); // 특정 지역에 가게 추가하기 API
-app.post("/api/v1/stores/:storeId/reviews", handleAddReview); // 가게에 리뷰 추가하기 API
-app.post("/api/v1/biz/stores/:storeId/missions", handleAddMission); // 가게에 미션 추가하기 API
-app.post("/api/v1/missions/:missionId", handleAcceptMission); // 가게의 미션을 도전 중인 미션에 추가 (미션 도전하기) API
+app.post("/api/v1/biz/stores", isLogin, handleAddStore); // 특정 지역에 가게 추가하기 API
+app.post("/api/v1/stores/:storeId/reviews", isLogin, handleAddReview); // 가게에 리뷰 추가하기 API
+app.post("/api/v1/biz/stores/:storeId/missions", isLogin, handleAddMission); // 가게에 미션 추가하기 API
+app.post("/api/v1/missions/:missionId", isLogin, handleAcceptMission); // 가게의 미션을 도전 중인 미션에 추가 (미션 도전하기) API
 app.get("/api/v1/stores/:storeId/reviews", handleGetReviews);
-app.get("/api/v1/reviews/me", handleGetMyReviews);
+app.get("/api/v1/reviews/me", isLogin, handleGetMyReviews);
 app.get("/api/v1/stores/:storeId/missions", handleGetMissions);
-app.get("/api/v1/missions/me", handleMyMissions);
-app.patch("/api/v1/biz/missions", handleCompleteMission);
+app.get("/api/v1/missions/me", isLogin, handleMyMissions);
+app.patch("/api/v1/biz/missions", isLogin, handleCompleteMission);
+app.put("/api/v1/users/me", isLogin, handleModifyMyInfo);
 
 // 쿠키 만드는 라우터
 app.get("/setcookie", (req, res) => {
@@ -137,59 +154,137 @@ app.get("/getcookie", (req, res) => {
   }
 });
 
-const isLogin = (req, res, next) => {
-  // cookie-parser가 만들어준 req.cookies 객체에서 username을 확인
-  const { username } = req.cookies;
+// const isLogin = (req, res, next) => {
+//   // cookie-parser가 만들어준 req.cookies 객체에서 username을 확인
+//   const { username } = req.cookies;
 
-  if (username) {
-    console.log(`[인증 성공] ${username}님, 환영합니다.`);
-    next();
-  } else {
-    console.log("[인증 실패] 로그인이 필요합니다.");
-    res
-      .status(401)
-      .send(
-        '<script>alert("로그인이 필요합니다!");location.href="/login";</script>'
-      );
+//   if (username) {
+//     console.log(`[인증 성공] ${username}님, 환영합니다.`);
+//     next();
+//   } else {
+//     console.log("[인증 실패] 로그인이 필요합니다.");
+//     res
+//       .status(401)
+//       .send(
+//         '<script>alert("로그인이 필요합니다!");location.href="/login";</script>'
+//       );
+//   }
+// };
+
+// app.get("/", (req, res) => {
+//   res.send(`
+//         <h1>메인 페이지</h1>
+//         <p>이 페이지는 로그인이 필요 없습니다.</p>
+//         <ul>
+//             <li><a href="/mypage">마이페이지 (로그인 필요)</a></li>
+//         </ul>
+//     `);
+// });
+
+// app.get("/login", (req, res) => {
+//   res.send(
+//     "<h1>로그인 페이지</h1><p>로그인이 필요한 페이지에서 튕겨나오면 여기로 옵니다.</p>"
+//   );
+// });
+
+// app.get("/mypage", isLogin, (req, res) => {
+//   res.send(`
+//         <h1>마이페이지</h1>
+//         <p>환영합니다, ${req.cookies.username}님!</p>
+//         <p>이 페이지는 로그인한 사람만 볼 수 있습니다.</p>
+//     `);
+// });
+
+// app.get("/set-login", (req, res) => {
+//   res.cookie("username", "UMC9th", { maxAge: 3600000 });
+//   res.send(
+//     '로그인 쿠키(username=UMC9th) 생성 완료! <a href="/mypage">마이페이지로 이동</a>'
+//   );
+// });
+
+// app.get("/set-logout", (req, res) => {
+//   res.clearCookie("username");
+//   res.send('로그아웃 완료 (쿠키 삭제). <a href="/">메인으로</a>');
+// });
+app.post(
+  "/login",
+  passport.authenticate("local", {
+    session: false,
+    failureRedirect: "login-failed",
+  }),
+  (req, res) => {
+    const tokens = req.user;
+
+    res.status(200).json({
+      resultType: "SUCCESS",
+      error: null,
+      success: {
+        message: "LOCAL 로그인 성공!",
+        tokens: tokens, // { "accessToken": "...", "refreshToken": "..." }
+      },
+    });
   }
-};
+);
+app.get(
+  "/oauth2/login/google",
+  passport.authenticate("google", {
+    session: false,
+  })
+);
+app.get(
+  "/oauth2/callback/google",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login-failed",
+  }),
+  (req, res) => {
+    const tokens = req.user;
 
-app.get("/", (req, res) => {
-  res.send(`
-        <h1>메인 페이지</h1>
-        <p>이 페이지는 로그인이 필요 없습니다.</p>
-        <ul>
-            <li><a href="/mypage">마이페이지 (로그인 필요)</a></li>
-        </ul>
-    `);
-});
+    res.status(200).json({
+      resultType: "SUCCESS",
+      error: null,
+      success: {
+        message: "Google 로그인 성공!",
+        tokens: tokens, // { "accessToken": "...", "refreshToken": "..." }
+      },
+    });
+  }
+);
 
-app.get("/login", (req, res) => {
-  res.send(
-    "<h1>로그인 페이지</h1><p>로그인이 필요한 페이지에서 튕겨나오면 여기로 옵니다.</p>"
-  );
-});
+app.get(
+  "/oauth2/login/naver",
+  passport.authenticate("naver", {
+    authType: "reprompt",
+    session: false,
+  })
+);
+
+app.get(
+  "/oauth2/callback/naver",
+  passport.authenticate("naver", {
+    failureRedirect: "/login-failed",
+    session: false,
+  }),
+  (req, res) => {
+    const tokens = req.user;
+
+    res.status(200).json({
+      resultType: "SUCCESS",
+      error: null,
+      success: {
+        message: "Naver 로그인 성공!",
+        tokens: tokens, // { "accessToken": "...", "refreshToken": "..." }
+      },
+    });
+  }
+);
 
 app.get("/mypage", isLogin, (req, res) => {
-  res.send(`
-        <h1>마이페이지</h1>
-        <p>환영합니다, ${req.cookies.username}님!</p>
-        <p>이 페이지는 로그인한 사람만 볼 수 있습니다.</p>
-    `);
+  res.status(200).success({
+    message: `인증 성공! ${req.user.name}님의 마이페이지입니다.`,
+    user: req.user,
+  });
 });
-
-app.get("/set-login", (req, res) => {
-  res.cookie("username", "UMC9th", { maxAge: 3600000 });
-  res.send(
-    '로그인 쿠키(username=UMC9th) 생성 완료! <a href="/mypage">마이페이지로 이동</a>'
-  );
-});
-
-app.get("/set-logout", (req, res) => {
-  res.clearCookie("username");
-  res.send('로그아웃 완료 (쿠키 삭제). <a href="/">메인으로</a>');
-});
-
 app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
