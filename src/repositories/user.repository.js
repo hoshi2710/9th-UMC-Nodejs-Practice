@@ -67,3 +67,18 @@ export const getUserPreferencesByUserId = async (userId) => {
   });
   return preferences;
 };
+export const modifyUser = async (data) => {
+  const isExist = await prisma.user.findUnique({
+    where: {
+      id: data.id,
+    },
+  });
+  if (!isExist) return null;
+  const user = await prisma.user.update({
+    where: {
+      id: data.id,
+    },
+    data: data.data,
+  });
+  return user;
+};

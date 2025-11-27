@@ -21,3 +21,23 @@ export const responseFromUser = (data) => {
     preferences: data.preferencesMapped,
   };
 };
+export const modifyMyInfoRequestDto = (user, body) => {
+  return {
+    id: user.id,
+    data: {
+      password: body.password || null,
+      name: body.name || null,
+      gender: body.gender || null,
+      birth: body.birth ? new Date(body.birth) : null,
+      address: body.address || null,
+      detailAddress: body.detailAddress || null,
+      phoneNumber: body.phoneNumber || null,
+    },
+  };
+};
+
+export const modifyMyInfoResponseDto = (data) => {
+  return {
+    id: data.id,
+  };
+};

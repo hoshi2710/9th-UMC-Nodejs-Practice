@@ -1,9 +1,9 @@
-export const addReviewRequestDto = (body, params) => {
+export const addReviewRequestDto = (body, params, user) => {
   return {
     storeId: parseInt(params.storeId),
     score: body.score,
     content: body.content,
-    userId: body.userId,
+    userId: user.id,
   };
 };
 export const addReviewResponseDto = (data) => {
@@ -21,9 +21,9 @@ export const getReviewsRequestDto = (params, query) => {
 export const getReviewsResponseDto = (data) => {
   return data;
 };
-export const getMyReviewsRequestDto = (body, query) => {
+export const getMyReviewsRequestDto = (user, query) => {
   return {
-    userId: parseInt(body.userId),
+    userId: parseInt(user.id),
     cursor: parseInt(query.cursor) || 0,
   };
 };

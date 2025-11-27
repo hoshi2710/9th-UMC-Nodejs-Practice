@@ -73,7 +73,9 @@ export const handleAddReview = async (req, res, next) => {
       }
     }
   */
-  const review = await addReview(addReviewRequestDto(req.body, req.params));
+  const review = await addReview(
+    addReviewRequestDto(req.body, req.params, req.user)
+  );
   res.status(StatusCodes.CREATED).success(review);
 };
 export const handleGetReviews = async (req, res, next) => {
@@ -166,7 +168,7 @@ export const handleGetMyReviews = async (req, res, next) => {
     }
   */
   const reviews = await getMyReviews(
-    getMyReviewsRequestDto(req.body, req.query)
+    getMyReviewsRequestDto(req.user, req.query)
   );
   res.status(StatusCodes.OK).success(reviews);
 };
