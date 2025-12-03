@@ -298,5 +298,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
+  process.send("ready");
   console.log(`Example app listening on port ${port}`);
 });
