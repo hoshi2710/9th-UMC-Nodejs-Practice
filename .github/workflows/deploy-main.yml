@@ -15,10 +15,18 @@ jobs:
         with:
           node-version: "24"
           cache: "npm"
+    
       - name: Install dependencies
         run: npm ci
+      - name: Inject environment variables
+        run: |
+          ssh target "cat > .env <<'EOF'
+          ${{ secrets.EC2_DOT_ENV }}
+          EOF"
+        env:
+          EC2_DOT_ENV: ${{ secrets.EC2_DOT_ENV }}
       - name: Generate + Build
-        run: DATABASE_URL=null&&npx prisma generate&&npm run build
+        run: npx prisma generate&&npm run build
       - name: Prune devDependencies (runtime) + Regenerate
         run: |
           npm prune --omit=dev
